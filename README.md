@@ -1,102 +1,95 @@
-# Brain Tumor MRI Detection and Classification
+# Brain Tumor MRI Detector
 
-This project is a COMP 263 deep learning application for detecting and classifying brain tumors from MRI scans using the Kaggle brain tumor dataset.
+This repository contains a complete COMP 263 deep learning project for brain tumor MRI image classification.
 
-## Problem
-Classify each MRI image into one of four classes:
+The repository already includes:
+
+- the MRI dataset in `data/brain_tumor_dataset/`
+- the trained model files in `models/`
+- the saved evaluation outputs in `outputs/`
+- the Streamlit application in `app.py`
+
+Students can clone the repository and run the app directly after installing the Python dependencies.
+
+## Classes
+
+The model predicts one of these four classes:
 
 - `glioma`
 - `meningioma`
 - `notumor`
 - `pituitary`
 
-## Recommended Model
-The best current model in this repository is `EfficientNetB0` with transfer learning.
+## Included Best Model
 
-Why this is the best fit for this dataset:
+The main recommended model in this project is:
 
-- The dataset is image-based and relatively small, so transfer learning is more reliable than training a deep CNN from scratch.
-- EfficientNetB0 gives a strong accuracy-efficiency tradeoff for local training and demos.
-- It generalizes better than the baseline CNN on the saved checkpoints in this repo.
+- `EfficientNetB0 Transfer`
 
-Current evaluated results on the provided test split:
+Saved evaluation result:
 
-- `EfficientNetB0 Transfer`: Accuracy `84.63%`, Macro F1 `84.11%`
-- `Baseline CNN`: Accuracy `75.63%`, Macro F1 `73.53%`
+- Accuracy: `84.63%`
+- Macro Precision: `84.84%`
+- Macro Recall: `84.63%`
+- Macro F1: `84.11%`
 
-An additional `DenseNet121` transfer model is included as a strong medical-imaging alternative for future experiments.
+Baseline comparison:
 
-## Dataset
-Place the Kaggle dataset in:
+- `Baseline CNN` Accuracy: `75.63%`
+- `Baseline CNN` Macro F1: `73.53%`
 
-`data/brain_tumor_dataset/`
+## Quick Start
 
-Expected structure:
+Open a terminal in the project folder and run:
 
-```text
-data/
-└── brain_tumor_dataset/
-    ├── Training/
-    │   ├── glioma/
-    │   ├── meningioma/
-    │   ├── notumor/
-    │   └── pituitary/
-    └── Testing/
-        ├── glioma/
-        ├── meningioma/
-        ├── notumor/
-        └── pituitary/
-```
-
-## Features
-
-- Baseline CNN and transfer-learning models
-- Model comparison pipeline
-- Accuracy, precision, recall, F1-score, and confusion matrix evaluation
-- Streamlit web app for MRI upload and prediction
-- Saved plots and JSON metrics for the final report
-
-## Setup
-
-```bash
+```powershell
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
-```
-
-## Train
-
-Train the recommended model:
-
-```bash
-python train.py --model efficientnet_b0_transfer
-```
-
-Train all supported models:
-
-```bash
-python train.py --model all
-```
-
-## Evaluate
-
-Evaluate the recommended model:
-
-```bash
-python evaluate.py --model efficientnet_b0_transfer
-```
-
-Evaluate every trained model and build a leaderboard:
-
-```bash
-python evaluate.py --model all
-```
-
-## Run the App
-
-```bash
 streamlit run app.py
 ```
 
-## Project Note
-This application is for educational and research purposes only. It must not be used for real medical diagnosis.
+Then open the local Streamlit URL shown in the terminal.
+
+## Project Structure
+
+```text
+COMP263-Brain-Tumor-Classification-main/
+├── app.py
+├── config.py
+├── data/
+│   └── brain_tumor_dataset/
+├── models/
+├── outputs/
+├── train.py
+├── evaluate.py
+├── model_factory.py
+├── data_utils.py
+├── requirements.txt
+└── README.md
+```
+
+## Notes for Students
+
+- The trained models are already included.
+- You do not need to retrain the model to use the app.
+- If you only want to test predictions, just install dependencies and run `streamlit run app.py`.
+- Retraining is optional and only needed if you want to experiment with different models.
+
+## Optional Commands
+
+Run evaluation:
+
+```powershell
+python evaluate.py --model all
+```
+
+Retrain the recommended model:
+
+```powershell
+python train.py --model efficientnet_b0_transfer
+```
+
+## Important Note
+
+This project is for educational use only and is not a medical diagnosis tool.

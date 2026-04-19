@@ -1,0 +1,18 @@
+[
+  {
+    "model_name": "efficientnet_b0_transfer",
+    "display_name": "EfficientNetB0 Transfer",
+    "accuracy": 0.84625,
+    "macro_f1": 0.8410834030061695,
+    "weighted_f1": 0.8410834030061695,
+    "model_path": "C:\\Users\\noorl\\Desktop\\NueralNetworks\\COMP263-Brain-Tumor-Classification-main\\models\\efficientnet_b0_transfer.keras"
+  },
+  {
+    "model_name": "baseline_cnn",
+    "display_name": "Baseline CNN",
+    "accuracy": 0.75625,
+    "macro_f1": 0.7353023120298889,
+    "weighted_f1": 0.7353023120298888,
+    "model_path": "C:\\Users\\noorl\\Desktop\\NueralNetworks\\COMP263-Brain-Tumor-Classification-main\\models\\baseline_cnn.keras"
+  }
+]
