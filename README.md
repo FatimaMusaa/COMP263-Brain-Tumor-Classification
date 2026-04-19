@@ -51,6 +51,15 @@ streamlit run app.py
 
 Then open the local Streamlit URL shown in the terminal.
 
+## Easiest Windows Setup
+
+If you are using Windows, you can simply:
+
+1. Run `setup.bat` once
+2. Run `run_app.bat` to start the app
+
+This lets students open the project and run it more easily without typing all commands manually.
+
 ## Project Structure
 
 ```text
@@ -66,6 +75,8 @@ COMP263-Brain-Tumor-Classification-main/
 ├── model_factory.py
 ├── data_utils.py
 ├── requirements.txt
+├── setup.bat
+├── run_app.bat
 └── README.md
 ```
 
