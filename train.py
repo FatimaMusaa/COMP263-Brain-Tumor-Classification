@@ -47,7 +47,8 @@ def merge_histories(*histories: tf.keras.callbacks.History) -> dict[str, list]:
             merged.setdefault(key, []).extend(values)
     return merged
 
-
+# This function returns common callbacks used during model training
+# Callbacks help improve training performance and prevent overfitting
 def get_common_callbacks(model_name: str):
     return [
         tf.keras.callbacks.EarlyStopping(
@@ -61,7 +62,7 @@ def get_common_callbacks(model_name: str):
             monitor="val_accuracy",
             save_best_only=True,
             verbose=1,
-        ),
+        ),# Reduces learning rate when validation loss stops improving
         tf.keras.callbacks.ReduceLROnPlateau(
             monitor="val_loss",
             factor=0.2,
@@ -71,7 +72,7 @@ def get_common_callbacks(model_name: str):
         ),
     ]
 
-
+ # Saves the best model based on validation accuracy
 def save_training_summary(model_name: str, history_dict: dict, class_names: list[str]) -> None:
     summary = {
         "model_name": model_name,
@@ -85,15 +86,18 @@ def save_training_summary(model_name: str, history_dict: dict, class_names: list
     with open(OUTPUTS_DIR / f"{model_name}_training_summary.json", "w", encoding="utf-8") as file:
         json.dump(summary, file, indent=2)
 
-
+# This function trains one model based on its name It handles both training the classifier head and fine-tuning the backbone if applicable
 def train_single_model(model_name: str) -> None:
+    # Load training and validation datasets along with class names
     train_ds, val_ds, _, class_names = create_datasets()
+    # Create the model and its configuration (bundle) based on the selected model name
     bundle = create_model(model_name)
+     # Get callbacks (EarlyStopping, ModelCheckpoint, ReduceLR) for training
     callbacks = get_common_callbacks(model_name)
-
+ # Print model name and recommendation (for logging)
     print(f"\nTraining {bundle.display_name}...")
     print(bundle.recommendation)
-
+# Case 1: Model WITHOUT pretrained backbone (train normally)
     if bundle.backbone is None:
         history = bundle.model.fit(
             train_ds,
@@ -103,6 +107,8 @@ def train_single_model(model_name: str) -> None:
             verbose=1,
         )
         history_dict = history.history
+         # Case 2: Transfer Learning (with backbone)
+         # Step 1: Train only the classifier head (freeze backbone)
     else:
         frozen_epochs = max(5, EPOCHS // 3)
         print(f"Stage 1: training classifier head for {frozen_epochs} epochs")
@@ -113,18 +119,18 @@ def train_single_model(model_name: str) -> None:
             callbacks=callbacks,
             verbose=1,
         )
-
+ # Step 2: Fine-tune the top layers of the backbone
         print("Stage 2: fine-tuning top backbone layers")
         bundle.backbone.trainable = True
         for layer in bundle.backbone.layers[:-30]:
             layer.trainable = False
-
+ # Recompile model with a lower learning rate (important for fine-tuning)
         compile_model(
             bundle.model,
             learning_rate=1e-5,
             class_weights=None,
         )
-
+ # Continue training (fine-tuning)
         stage_two = bundle.model.fit(
             train_ds,
             validation_data=val_ds,
@@ -143,9 +149,11 @@ def train_single_model(model_name: str) -> None:
     print(f"Classes: {class_names}")
     print(f"Best val_accuracy: {max(history_dict['val_accuracy']):.4f}")
 
-
+# This function handles command-line arguments
+# It allows the user to choose which model to train
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train brain MRI tumor classifiers.")
+    # Add argument --model (user can select a specific model or "all")
     parser.add_argument(
         "--model",
         default=DEFAULT_MODEL_NAME,
@@ -154,7 +162,7 @@ def parse_args() -> argparse.Namespace:
     )
     return parser.parse_args()
 
-
+# Entry point of the program
 if __name__ == "__main__":
     args = parse_args()
     selected_models = (
