@@ -315,32 +315,27 @@ with st.sidebar:
     st.title("MRI Tumor Detector")
     st.caption("Deep learning demo for COMP 263")
 
+    st.markdown("## 🧠 MRI Detector")
+
     if not available_models:
         st.error("No trained model files were found in the models folder.")
         st.stop()
 
     selected_model_name = st.selectbox(
-        "Choose a trained model",
+        "Choose model",
         options=available_models,
         index=default_index,
         format_func=lambda name: MODEL_LABELS.get(name, name),
     )
-    st.caption(f"Selected model: {MODEL_LABELS.get(selected_model_name, selected_model_name)}")
 
-    leaderboard = load_model_comparison()
-    if leaderboard:
-        st.markdown("### Model ranking")
-        for item in leaderboard[:3]:
-            st.write(
-                f"{MODEL_LABELS.get(item['model_name'], item['model_name'])}: "
-                f"Macro F1 = {item['macro_f1']:.3f}"
-            )
+    st.markdown("---")
 
-    st.markdown("### Project details")
-    st.write("Classes: Glioma, Meningioma, No Tumor, Pituitary")
-    st.write(f"Input size: {IMAGE_SIZE[0]} x {IMAGE_SIZE[1]}")
-    st.caption("Educational use only. Not medical advice.")
-
+    # Clean educational note
+    st.caption(
+        "Group 6 Project • COMP 263\n\n"
+        "This tool is for educational purposes only and "
+        "is not intended for medical diagnosis."
+    )
 
 bundle = load_trained_model(selected_model_name)
 
@@ -362,7 +357,7 @@ with left_col:
     image = None
     if uploaded_file is not None:
         image = Image.open(uploaded_file)
-        st.image(image, caption="Uploaded MRI", use_container_width=True)
+        st.image(image, caption="Uploaded MRI", use_container_width=500)
     else:
         st.info("Upload an image to begin.")
 
@@ -383,14 +378,35 @@ with right_col:
         confidence = float(predictions[predicted_index])
         top_indices = np.argsort(predictions)[::-1]
 
-        if predicted_class == "notumor" and confidence >= 0.55:
-            st.success(status_text)
-        elif confidence < 0.55:
-            st.warning(status_text)
-        else:
-            st.error(f"{format_label(predicted_class)} tumor detected")
+ # 🎯 COLOR RESULT DISPLAY
 
-        st.metric("Predicted class", format_label(predicted_class))
+        if predicted_class == "notumor" and confidence >= 0.55:
+          st.success("🟢 No Tumor Detected")
+
+        elif confidence < 0.55:
+          st.warning("🟡 Low Confidence Prediction")
+
+        else:
+         st.markdown(
+        f"""
+        <div style="
+            background: linear-gradient(90deg, #7f1d1d, #991b1b);
+            padding: 14px;
+            border-radius: 12px;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+            text-align: center;
+        ">
+        🔴 {format_label(predicted_class)} Tumor Detected
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+        if predicted_class != "notumor":
+         st.markdown(f"### 🔴 {format_label(predicted_class)}")
+        else:
+         st.markdown("### 🟢 No Tumor")
         st.metric("Confidence", f"{confidence * 100:.2f}%")
         st.caption(f"Model used: {MODEL_LABELS.get(selected_model_name, selected_model_name)}")
 
@@ -398,8 +414,14 @@ with right_col:
         for index in top_indices:
             label = format_label(CLASS_NAMES[int(index)])
             prob = float(predictions[int(index)])
+            st.markdown(
+                f"<div style='font-size:16px; font-weight:600;'>"
+                f"{label}: {prob * 100:.2f}%"
+                f"</div>",
+                unsafe_allow_html=True
+                )
             st.progress(prob)
-            st.caption(f"{label}: {prob * 100:.2f}%")
+            
 
         render_tumor_info(predicted_class)
 
@@ -408,7 +430,7 @@ with right_col:
             st.image(
                 overlay,
                 caption="Grad-CAM style heatmap overlay showing influential regions",
-                use_container_width=True,
+                use_container_width=500,
             )
         else:
             st.caption("Visual explanation is not available for this saved model build.")
@@ -430,86 +452,113 @@ with st.expander("Tumor Definitions and Official References"):
         st.markdown(f"[{info['link_label']}]({info['link_url']})")
 
 st.markdown("---")
-st.subheader("Model Evaluation Details")
 
-metrics = load_model_metrics(selected_model_name)
 
-if metrics is None:
-    st.info("No saved evaluation file was found for the selected model yet. Run evaluate.py to generate it.")
-else:
-    metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
-    with metric_col1:
-        st.metric("Accuracy", f"{metrics['accuracy']:.3f}")
-    with metric_col2:
-        st.metric("Macro Precision", f"{metrics['macro_precision']:.3f}")
-    with metric_col3:
-        st.metric("Macro Recall", f"{metrics['macro_recall']:.3f}")
-    with metric_col4:
-        st.metric("Macro F1", f"{metrics['macro_f1']:.3f}")
+with st.expander("📊 Model Evaluation Details (Click to View)"):
 
-    cm = np.array(metrics["confusion_matrix"])
-    st.markdown("### Confusion Matrix")
-    st.caption("Rows are actual classes and columns are predicted classes.")
+    metrics = load_model_metrics(selected_model_name)
 
-    matrix_image_path = OUTPUTS_DIR / f"{selected_model_name}_confusion_matrix.png"
-    if matrix_image_path.exists():
-        st.image(
-            str(matrix_image_path),
-            caption="Confusion matrix visualization",
-            use_container_width=True,
+    if metrics is None:
+        st.info("No saved evaluation file was found for the selected model yet.")
+    else:
+        metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
+
+        with metric_col1:
+            st.metric("Accuracy", f"{metrics['accuracy']:.3f}")
+        with metric_col2:
+            st.metric("Macro Precision", f"{metrics['macro_precision']:.3f}")
+        with metric_col3:
+            st.metric("Macro Recall", f"{metrics['macro_recall']:.3f}")
+        with metric_col4:
+            st.metric("Macro F1", f"{metrics['macro_f1']:.3f}")
+
+        # ✅ CONTROL CONFUSION MATRIX DISPLAY
+        show_cm = st.checkbox("Show Confusion Matrix")
+
+        if show_cm:
+            st.markdown("### Confusion Matrix")
+            st.caption("Rows are actual classes and columns are predicted classes.")
+
+            matrix_image_path = OUTPUTS_DIR / f"{selected_model_name}_confusion_matrix.png"
+
+            if matrix_image_path.exists():
+                st.image(
+                    str(matrix_image_path),
+                    caption="Confusion matrix visualization",
+                    width=500
+                )
+
+      # ✅ Tabs ALSO INSIDE expander
+details_tab, report_tab, matrix_tab = st.tabs(
+    ["Model Info", "Classification Report", "Confusion Matrix Table"]
+)
+
+# ------------------ DETAILS TAB ------------------
+with details_tab:
+    st.write(f"**Model name:** {MODEL_LABELS.get(selected_model_name, selected_model_name)}")
+    st.write(f"**Classes:** {', '.join(format_label(name) for name in CLASS_NAMES)}")
+    st.write(f"**Input size:** {IMAGE_SIZE[0]} x {IMAGE_SIZE[1]}")
+
+# ------------------ REPORT TAB ------------------
+with report_tab:
+    st.markdown("### Classification Report")
+
+    headers = st.columns([1.5, 1, 1, 1, 1])
+    headers[0].write("**Class**")
+    headers[1].markdown("<div style='text-align:center'><b>Precision</b></div>", unsafe_allow_html=True)
+    headers[2].markdown("<div style='text-align:center'><b>Recall</b></div>", unsafe_allow_html=True)
+    headers[3].markdown("<div style='text-align:center'><b>F1-score</b></div>", unsafe_allow_html=True)
+    headers[4].markdown("<div style='text-align:center'><b>Support</b></div>", unsafe_allow_html=True)
+
+    for class_name in CLASS_NAMES:
+        class_report = metrics["classification_report"].get(class_name, {})
+
+        cols = st.columns([1.5, 1, 1, 1, 1])
+
+        cols[0].write(f"**{format_label(class_name)}**")
+
+        cols[1].markdown(
+            f"<div style='text-align:center'><b>{round(class_report.get('precision', 0.0), 3)}</b></div>",
+            unsafe_allow_html=True
+        )
+        cols[2].markdown(
+            f"<div style='text-align:center'><b>{round(class_report.get('recall', 0.0), 3)}</b></div>",
+            unsafe_allow_html=True
+        )
+        cols[3].markdown(
+            f"<div style='text-align:center'><b>{round(class_report.get('f1-score', 0.0), 3)}</b></div>",
+            unsafe_allow_html=True
+        )
+        cols[4].markdown(
+            f"<div style='text-align:center'><b>{int(class_report.get('support', 0))}</b></div>",
+            unsafe_allow_html=True
         )
 
-    details_tab, report_tab, matrix_tab = st.tabs(
-        ["Model Info", "Classification Report", "Confusion Matrix"]
-    )
+# ------------------ MATRIX TAB ------------------
+with matrix_tab:
+    st.markdown("### Confusion Matrix (Table View)")
+    st.caption("Rows = Actual | Columns = Predicted")
 
-    with details_tab:
-        st.write(f"**Model name:** {MODEL_LABELS.get(selected_model_name, selected_model_name)}")
-        st.write(f"**Classes:** {', '.join(format_label(name) for name in CLASS_NAMES)}")
-        st.write(f"**Input size:** {IMAGE_SIZE[0]} x {IMAGE_SIZE[1]}")
+    cm = np.array(metrics["confusion_matrix"])
 
-        if selected_model_name == "efficientnet_b0_transfer":
-            st.write(
-                "**Architecture:** Transfer learning with EfficientNetB0 backbone and a custom dense classifier head."
-            )
-            st.write(
-                "**Why use it:** Best current balance of generalization, accuracy, and runtime on this Kaggle MRI dataset."
-            )
-        elif selected_model_name == "baseline_cnn":
-            st.write(
-                "**Architecture:** Custom CNN with convolution, batch normalization, pooling, and dense classification layers."
-            )
-            st.write(
-                "**Why use it:** Good baseline for comparing transfer learning against training from scratch."
-            )
-        elif selected_model_name == "densenet121_transfer":
-            st.write(
-                "**Architecture:** Transfer learning with DenseNet121 backbone and a custom dense classifier head."
-            )
-            st.write(
-                "**Why use it:** Strong alternative for medical imaging tasks when feature reuse is important."
-            )
+    header = st.columns([1.5, 1, 1, 1, 1])
+    header[0].write("**Actual \\ Predicted**")
 
-    with report_tab:
-        report_rows = []
-        for class_name in CLASS_NAMES:
-            class_report = metrics["classification_report"].get(class_name, {})
-            report_rows.append(
-                {
-                    "Class": format_label(class_name),
-                    "Precision": round(class_report.get("precision", 0.0), 3),
-                    "Recall": round(class_report.get("recall", 0.0), 3),
-                    "F1-score": round(class_report.get("f1-score", 0.0), 3),
-                    "Support": int(class_report.get("support", 0)),
-                }
-            )
-        st.table(report_rows)
+    for i, name in enumerate(CLASS_NAMES):
+        header[i+1].markdown(
+            f"<div style='text-align:center'><b>{format_label(name)}</b></div>",
+            unsafe_allow_html=True
+        )
 
-    with matrix_tab:
-        cm_rows = []
-        for row_index, class_name in enumerate(CLASS_NAMES):
-            row = {"Actual class": format_label(class_name)}
-            for col_index, predicted_name in enumerate(CLASS_NAMES):
-                row[f"Predicted {format_label(predicted_name)}"] = int(cm[row_index, col_index])
-            cm_rows.append(row)
-        st.table(cm_rows)
+    for row_index, actual_name in enumerate(CLASS_NAMES):
+        cols = st.columns([1.5, 1, 1, 1, 1])
+
+        cols[0].write(f"**{format_label(actual_name)}**")
+
+        for col_index in range(len(CLASS_NAMES)):
+            value = int(cm[row_index, col_index])
+
+            cols[col_index+1].markdown(
+                f"<div style='text-align:center'><b>{value}</b></div>",
+                unsafe_allow_html=True
+            )
